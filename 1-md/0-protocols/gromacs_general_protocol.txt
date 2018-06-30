@@ -1,0 +1,243 @@
+### CHL Lab Gromacs General Protocol
+### Author: Rosalind J. Xu 18' 2016-2018
+
+### protein=2BBM, etc; site=4.B (or wt), etc. $protein-$site is a file name stem. You can use whatever name stem you want. Another name stem I frequently used was $protein-$site-$spoint-$length, with spoint being sampling point identifier (from where the initial frame was taken) and length being the simulation identifier (how long is the simulation, etc).
+
+#####Pre-Processing#####
+###cyanylation, structural editting & pdb file trimming
+###See MD/protocols/cyanylation & gromacs pre-processing
+
+#####Gromacs Preparation#####
+###on MacOS
+#do not just export PATH. GMXRC sets a set of env vars. including PATH.
+source /usr/local/gromacs/bin/GMXRC
+export GMXLIB=/users/sherina/desktop/forcefields
+protein=“Enter protein name here”
+site=“Enter site name here”
+
+###0
+# convert to gmx formats
+# apply force field with MSCN residue to protein, create topology file, explicit water model tip3p
+# use -ter option to select N- and C- terms if necessary
+gmx pdb2gmx -f $protein-$site-trimmed.pdb -o $protein-$site-trimmed.gro -p $protein-$site.top -water tip3p -ff charmm36MSCN 
+
+# check generated topology
+gmx editconf -f $protein-$site-trimmed.gro -o $protein-$site-trimmed2.pdb -pbc
+# If the structure looks like a mess, try removing “-pbc”.
+#check that .gro file has consecutive numbering of residues and then water molecules
+#with no skips
+#there is a script for fixing this
+
+###1
+# create dodecahedral box (to minimize necessary number of water molecules) with 1.0 nm spacing on each side, center the protein in the box
+gmx editconf -f $protein-$site-trimmed.gro -o $protein-$site-boxed.gro -c -d 1.0 -bt dodecahedron
+
+###2
+# generate solvated topology; water model spc16 (the waters should adjust to tip3p configuration after a short eqlb) 
+gmx solvate -cp $protein-$site-boxed.gro -cs spc216.gro -p $protein-$site.top -o $protein-$site-solved.gro
+
+###3
+# combine structure, topology, and run-controll parameters to make a run file
+# take note of the system charge in command line output! Needed for charge balance in next step. The number of ions to add may vary from site to site of the same structure
+gmx grompp -f mdpfiles/0-mini-steep-frozen.mdp -c $protein-$site-solved.gro -p $protein-$site.top -o $protein-$site-0mini.tpr
+
+###4
+# add ions to neutralize the systems and to achieve a total salt concentration of ~ 150 mM (While "-conc 0.15 -neutral" is the prevalent way of adding ions, in some highly charged systems such as holo-CaM, adding an excess of Na+ on top of the 150 mM could make the ionic strength too high. In this case, please calculate how many ions of each (Na+, Cl-) to add from the box size. Calculate the box size from last line of $protein-$site-solved.gro (read the .gro file format documentation. Use matrix determinant). Ions replace SOL. (in all gmx options, the group number is not fixed! SOL can either be 15 or 13, for example.)
+# so: to get ionic strength correct, account for both SOL substitutions and the conc variable
+gmx genion -s $protein-$site-0mini.tpr -o $protein-$site-ion.gro -p $protein-$site.top -pname NA -nname CL -np XXX -nn XXX
+
+# check generated topology
+gmx editconf -f $protein-$site-ion.gro -o $protein-$site-ion.pdb -pbc
+# note that if you have not done any trjconv this will not look like a regular dodecahedron
+# and the protein won't necessarily be in the center of the box.
+# you are looking for major problems, like water clustering or broken proteins here.
+# if you show the unit cell in Chimera, the water should be roughly the same size as the unit cell and the protein should be in the middle of the (triclinic) unit cell at this point.  PBC means that the water won't necessarily match the unit cell at this point.
+
+
+###5
+# make an index file for all protein components + bond small molecule ligands + bond ions (that is, all but added waters and counter ions, or all components in the original .pdb file. In this case, 1 is for “Protein” and 13 is for “CA”).
+(echo 1 \| 13; echo q;) | gmx make_ndx -f $protein-$site-ion.gro -o $protein-$site-pdb.ndx
+#####Gromacs Preparation Ends#####
+
+#####Gromacs Equilibration (Extensive)#####
+###0
+###1
+# minimize solvent/ions energy
+gmx grompp -f mdpfiles/1-mini-solvent.mdp -c $protein-$site-ion.gro -p $protein-$site.top -o $protein-$site-1mini.tpr
+
+# minimize solvent/ion energy using steepest-descent algorithm
+# deffnm set all input/output file names to $protein-$site-1mini
+# if get "water can't settle" warnings at beginning of minimization, ignore them and remove all step*.pdb files.
+gmx mdrun -v -deffnm $protein-$site-1mini
+#it's ok if you don't totally converge
+
+# check generated topology
+gmx trjconv -f $protein-$site-1mini.trr -s $protein-$site-1mini.tpr -o $protein-$site-1mini.pdb -pbc mol -ur compact
+
+###2a
+# NVT (constant temp, vol, n_particles) equilibration of solvent/ions
+gmx grompp -f mdpfiles/2-solvent-eqlb-nvt.mdp -c $protein-$site-1mini.gro -p $protein-$site.top -o $protein-$site-2sol.tpr
+
+# run; if the program seems to be running fine, stop it and proceed to Fock. 
+gmx mdrun -v -deffnm $protein-$site-2sol
+
+###on Fock
+###setup
+# copy everything on MacOS as a folder to Fock
+# copy mdpfiles to folder
+# do not just export PATH. GMXRC sets a set of env vars. including PATH.
+source /opt/gromacs5/bin/GMXRC
+export GMXLIB=/home/jiaming/forcefields
+protein=“Enter protein name here”
+site=“Enter site name here”
+module load openmpi
+
+# how many nodes to use? Due to limit in communication bandwidth on Fock (not necessarily the case on other servers!), gromacs parallelization involving PME electrostatics does not scale well due to limit in FFT communication. For a moderate system size (< 30 K), usually it does not worth it to scale beyond 1 node. You may consider using more nodes if your system is > 30 K atoms.
+
+###2b
+# NVT (constant temp, vol, n_particles) equilibration of solvent/ions
+gmx_mpi grompp -f mdpfiles/2-solvent-eqlb-nvt.mdp -c $protein-$site-1mini.gro -p $protein-$site.top -o $protein-$site-2sol.tpr
+
+# run (qsub queue.sh; use mpirun -np #nodes; change variable names and command options)
+gmx_mpi mdrun -v -deffnm $protein-$site-2sol
+
+# check trajectory
+gmx_mpi trjconv -f $protein-$site-2sol.trr -s $protein-$site-2sol.tpr -o $protein-$site-2sol.pdb -pbc mol -ur compact
+
+###3
+# set up energy minimization of the entire system, steepest descent integrator
+gmx_mpi grompp -f mdpfiles/3-steep.mdp -c $protein-$site-2sol.gro -p $protein-$site.top -o $protein-$site-3steep.tpr
+
+# run (qsub queue.sh; use mpirun -np #nodes; change variable names and command options)
+gmx_mpi mdrun -v -deffnm $protein-$site-3steep
+
+# check log file
+# nano scroll down to bottom: ctrl + w + v
+nano $protein-$site-3steep.log 
+
+# check trajectory; choose the protein components + bond ligand + bond ion index group (19 in this case)
+# visualize trajectories / all pdb files in pymol
+gmx_mpi trjconv -f $protein-$site-3steep.trr -s $protein-$site-3steep.tpr -n $protein-$site-pdb.ndx -o $protein-$site-3steep.pdb -pbc mol -ur compact
+
+###4
+# temperature annealing
+gmx_mpi grompp -f mdpfiles/4-anneal.mdp -c $protein-$site-3steep.gro -p $protein-$site.top -o $protein-$site-4anneal.tpr -maxwarn 2
+
+# run
+# use tail [JOBNAME].o[XXXX] to check progress / estimated finish time
+gmx_mpi mdrun -v -deffnm $protein-$site-4anneal
+
+# check trajectory; choose the protein components + bond ligand + bond ion index group (19 in this case)
+gmx_mpi trjconv -f $protein-$site-4anneal.trr -s $protein-$site-4anneal.tpr -n $protein-$site-pdb.ndx -o $protein-$site-4anneal.pdb -pbc mol -ur compact -skip 10
+
+###5
+# NPT equilibration of the system
+gmx_mpi grompp -f mdpfiles/5-npt.mdp -c $protein-$site-4anneal.gro -p $protein-$site.top -o $protein-$site-5npt.tpr
+
+# run
+gmx_mpi mdrun -v -deffnm $protein-$site-5npt
+
+# check trajectory; choose the protein components + bond ligand + bond ion index group (19 in this case)
+gmx_mpi trjconv -f $protein-$site-5npt.trr -s $protein-$site-5npt.tpr -n $protein-$site-pdb.ndx-o $protein-$site-5npt.pdb -pbc mol -ur compact -skip 10
+
+###6 
+# This step is only necessary if your production run is NVT!
+# Otherwise (NPT ensemble), the equilibration is already completed; skip to production run
+# NVT equilibration of the system
+gmx_mpi grompp -f mdpfiles/6-nvt.mdp -c $protein-$site-5npt.gro -p $protein-$site.top -o $protein-$site-6nvt.tpr
+
+# run
+gmx_mpi mdrun -v -deffnm $protein-$site-6nvt
+
+# check trajectory; choose the protein components + bond ligand + bond ion index group (19 in this case)
+gmx_mpi trjconv -f $protein-$site-6nvt.trr -s $protein-$site-6nvt.tpr -n $protein-$site-pdb.ndx -o $protein-$site-6nvt.pdb -pbc mol -ur compact -skip 10 
+
+# read forces from trajectory; view .xvg file with xmgrace
+gmx_mpi traj -f $protein-$site-6nvt.trr -s $protein-$site-6nvt.tpr -of $protein-$site-6nvt-force.xvg
+
+#####End of Gromacs Equilibration (Extensive)#####
+
+##### Production Run #####
+###0
+# prepare files for running
+# be careful: in my files both 6-md.mdp and 7-md.mdp are NPT ensembles. If you wish to do a NVT run, you will need to modify the mdp options.
+gmx_mpi grompp -f mdpfiles/6-md.mdp -c $protein-$site-5npt.gro -p $protein-$site.top -o $protein-$site-6md.tpr
+# OR: if you did the NVT equilibration (for your NVT production run):
+# You will need to change all subsequent 6md to 7md too, and 7md to 8md, etc...
+gmx_mpi grompp -f mdpfiles/7-md.mdp -c $protein-$site-6nvt.gro -p $protein-$site.top -o $protein-$site-7md.tpr
+
+# run
+gmx_mpi mdrun -v -deffnm $protein-$site-6md
+
+### trajectory trimming: this does not have a clear tutorial elsewhere and following these four steps mostly does what you need (but there are many other options in trjconv documentation)
+# use -translate x y z if necessary
+# use -dt n to define at what interval to extract trajectory
+# use -b and -e to specify the begin and end frame, respectively
+# please follow the following four steps. They are crucial to producing a whole trajectory that is not broken across boundaries. the following four steps should produce a nicely trimmed trajectory, with protein + bond ligands + bond ions centered and the waters surround in a dodecahedral conformation -- most of the time. 
+# however, this is not absolute. If the trimmed trajectory looks awry, try something else. 
+
+# step 1 (nojump): keep the protein with the ligands in the center of the box: 
+# center the protein components + bond ligand + bond ion index group; output the System(0)
+gmx_mpi trjconv -f $protein-$site-6md.trr -s $protein-$site-1mini.tpr -n $protein-$site-pdb.ndx -o $protein-$site-6md-nojump.xtc -pbc nojump -center
+
+# step 2 (whole): make the protein whole
+# center the protein(1); output the System(0)
+gmx_mpi trjconv -f $protein-$site-6md-nojump.xtc -s $protein-$site-1mini.tpr -n $protein-$site-pdb.ndx -o $protein-$site-6md-nojumpwhole.xtc -pbc whole -center
+
+# step 3 (atom): withdraw the waters to surround the protein in a dodecahedral shell 
+# center the protein(1); output the System(0)
+gmx_mpi trjconv -f $protein-$site-6md-nojumpwhole.xtc -s $protein-$site-6md.tpr -n $protein-$site-pdb.ndx -o $protein-$site-6md-nojumpwholeatom.xtc -pbc atom -ur compact -center
+
+# step 4 (whole): fix broken waters (and protein) across periodic boundaries
+# center the protein(1); output the System(0)
+gmx_mpi trjconv -f $protein-$site-6md-nojumpwholeatom.xtc -s $protein-$site-6md.tpr -n $protein-$site-pdb.ndx -o $protein-$site-6md-nojumpwholeatomwhole.xtc -pbc whole -center
+
+# examine the trimmed trajectory using Chimera/etc: Is the protein kept with all the ligands in the center of the box? Are the waters forming a dodecahedron surrounding the protein? Are the water molecules broken across periodic boundaries? If not, try something else.
+# fit the protein + bond ligand + bond ion index group, output System
+gmx_mpi trjconv -f $protein-$site-6md-nojumpwholeatomwhole.xtc -s $protein-$site-6md.tpr -n $protein-$site-pdb.ndx -o $protein-$site-6md-trj.pdb -fit rot+trans -dt 2000
+#change dt to make sure that these files don't get too big: dt is time step in ps
+
+# output a trajectory of the protein + ligands + ions index group
+# fit and output the protein + bond ligand + bond ion index group
+gmx_mpi trjconv -f $protein-$site-6md-nojumpwholeatomwhole.xtc -s $protein-$site-6md.tpr -n $protein-$site-pdb.ndx -o $protein-$site-6md-protein.pdb -fit rot+trans -dt 100
+
+##### End of Production Run #####
+
+##### (Extension) #####
+# If need to extend simulation; in this case, extend by 15000 ps
+gmx_mpi convert-tpr -s $protein-$site-6md.tpr -extend 15000 -o $protein-$site-7md.tpr
+
+# run
+gmx_mpi mdrun -v -deffnm $protein-$site-7md -cpi $protein-$site-6md.cpt
+
+# (OR, if you wish: gmx_mpi mdrun -s $protein-$site-7md.tpr -cpi $protein-$site-6md.cpt -cpo $protein-$site-7md.cpt -mp $protein-$site.top -o $protein-$site-7md.trr -c $protein-$site-7md.gro -e $protein-$site-7md.edr -g $protein-$site-7md.log)
+
+# If the simulation crashed and you simply want to resume, and append outputs to existing output files:
+gmx_mpi mdrun -v -s $protein-$site-6md.tpr -cpi $protein-$site-6md.cpt -append -deffnm $protein-$site-6md 
+
+##### (End of Extension) #####
+
+##### Analysis #####
+# make sure you write down notes on what the indices are that you've made for your run!! This will make a big difference later.
+### use the final .xtc file (without jumps or breaks across periodic boundaries; $protein-$site-6md-nojumpatomwhole.xtc in this case) 
+### view the convergence of rms as compared to initial structure ($protein-$site-6md.tpr); Choose the protein components + bond ligand + bond ion index group for both least square fit and RMSD calculation
+gmx_mpi rms -f $protein-$site-6md-nojumpwholeatomwhole.xtc  -s $protein-$site-6md.tpr -n  $protein-$site-pdb.ndx -o $protein-$site-6md-rms.xvg
+
+### view radius of gyration convergence; Choose the protein components + bond ligand + bond ion index group
+gmx_mpi gyrate -f $protein-$site-6md-nojumpwholeatomwhole.xtc -s $protein-$site-6md.tpr -n  $protein-$site-pdb.ndx -o $protein-$site-6md-gyrate.xvg
+
+### CA-CB-SD-CE, N-CA-CB-SD dihedral distribution and as a function of time
+# make an index file for CA, CB, SD & CE in MSCN
+(echo a CA CB SD CE \& r MSCN; echo a N CA CB SD \& r MSCN; echo q;) | gmx make_ndx -f $protein-$site-6md.tpr -n $protein-$site-pdb.ndx -o dihedral.ndx 
+# print dihedral; select number corresponding to CA-CB-SD-CE (20 in this case). 
+echo 20 | gmx_mpi angle -type dihedral -f $protein-$site-6md-nojumpwholeatomwhole.xtc -n dihedral.ndx -od $protein-$site-6md-dihedralDist-1.xvg -ov $protein-$site-6md-dihedralTime-1.xvg -dt 10
+#-od is histogram, -ov is time series of this value
+# print dihedral; select number corresponding to N-CA-CB-SD (21 in this case). 
+echo 21 | gmx_mpi angle -type dihedral -f $protein-$site-6md-nojumpwholeatomwhole.xtc -n dihedral.ndx -od $protein-$site-6md-dihedralDist-2.xvg -ov $protein-$site-6md-dihedralTime-2.xvg -dt 10
+
+### SASA analysis of the SCN probe: on SCN nitrogen. 
+# Make an index file for NF in MSCN 
+(echo "a NF \& r MSCN"; echo "name 20 N"; echo q) | gmx make_ndx -f $protein-$site-6md.tpr -n $protein-$site-pdb.ndx -o N.ndx
+
+# calculate SASA. Select all non-solvent molecules (19 “Protein_CA” in this case) for surface; select number corresponding to NF (20 in this case) for output.168 dots per unit sphere seems to be a good choice based on scaling results.
+gmx_mpi sasa -surface 19 -output 20 -f $protein-$site-6md-nojumpwholeatomwhole.xtc -s $protein-$site-6md.tpr -n N.ndx -o $protein-$site-6md-sasa-N.xvg -ndots 168 -dt 10

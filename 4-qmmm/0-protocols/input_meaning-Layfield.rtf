@@ -1,0 +1,81 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf810
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww12600\viewh7800\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Calculation of Vibrational Frequencies\
+\
+	The code that I have written reads the output from the MD trajectories and calculates the instantaneous vibrational frequency for the nitrile group.  The code is written in a modular format that will hopefully make it more understandable.  The main program is 
+\b oPM3.f
+\b0 .  All of the other .f files contain subroutines that are called throughout the process of calculating the frequency.  I have tried to document the code as best as I can and if there are specific questions I will happy to address them.  The input file that I have elegantly called \'93input\'94 has a number of run parameters.  \
+They are listed below:\
+\
+\
+
+\b nprotein: 
+\b0 a flag variable to indicate whether this simulation is a protein (1) or a small molecule (0).  The order and expectations for the program change whether you are trying to model a molecule or an entire molecule.   \
+\
+
+\b nqm: 
+\b0 the number of qm residues to include (not counting water molecules). If nprotein = 0, then only the first residue will be calculated as the small molecule under consideration and this number is meaningless. \
+\
+
+\b jqm(nqm): 
+\b0 An array that contains the index for the residue(s) to be included in the QM region (i.e. Residue number).  These residues can be protein or ligand residues.  \
+\
+\
+
+\b lqm, nnqm:
+\b0  If one of the QM residues is a ligand, you can cut the ligand so that you don\'92t spend a lot of extra time calculating.  If you want to use this option, lqm is the number of the residue to be cut and nnqm is the number of qm atoms in the ligand.  If you are not including a ligand, you must set nnqm =0. \
+\
+
+\b jjqm(nnqm): 
+\b0 the index for the ligand atoms for to be included in the QM region. If nnqm=0, do not include this line.  \
+\
+
+\b ncap:
+\b0  If you cut the ligand we will need to cap the covalent bonds that are cut.  ncap is the number of covalent bonds cut in the ligand.  Include a ncap=0 even if you are not using a ligand. \
+\
+
+\b jcap1(ncap),jcap2(ncap): 
+\b0 If ncap > 0, there is a list for all of the atoms that need to be capped and the atom being replaced.  If ncap=0, do not include this line.\
+\
+\
+
+\b imonitor
+\b0  \'96 a flag variable that turns on the monitoring of specific distances to correlate with the frequencies.  If this variable is equal to 1 then the code with calculate specific distances at each frequency and write them to a file called \'93monitor.dat\'94.  \
+
+\b ndistance
+\b0   - If imonitor is equal to 1 then ndistance is the number of different distances that should be monitored.  If imonitor=0, set ndistance = 0.\
+
+\b jdist1, jdist2 
+\b0 \'96 The next few lines should be pairs of integers that correspond to the atoms that you want to monitor during the calculations.\
+\
+
+\b nwaters
+\b0  \'96 This is the number of water molecules that are included in the QM region.  The specific waters are selected by doing a distance test between the N of the nitrile and the O from the water.    \
+
+\b mwaters 
+\b0 -  the number of sites in water model used.  This is added to for the ability to use polarizable water model or TIP(4/5)P models.  \
+\
+
+\b icenter 
+\b0 \'96 If icenter =0, then we hold the carbon atom fixed and only move the nitrogen atom to simulate the vibrational stretching mode.  I experimented with a more reasonable description of the vibrational mode and it ended up being unfruitful but declaring icenter=1 keeps the center of mass fixed and moves both the carbon and nitrogen atoms.   \
+\
+
+\b iDFT
+\b0 - If iDFT equals 0 then the code will use the optimized PM3 method will be used for the frequency calculations.  If iDFT=1, you will use the B3LYP/6-311++G(d,p) method.  If iDFT=2, you will use the MP2/aug-ccpVDZ method to calculate the vibrational frequency.  If iDFT=3, then the next line should be the method to be used. \
+\
+
+\b iDVR 
+\b0 \'96 If iDVR=0, the PES for the C-N stretching mode is fit to a 
+\b Morse potential 
+\b0 and then the anharmonic vibrational frequency is determined by the parameters of the Morse potential.  If iDVR=1, the potential is fit using a
+\b  spline and the vibrational frequency is determined using a numerical method to solve for the vibrational wavefunctions and energies
+\b0 .  \
+
+\b idebug
+\b0  \'96 If idebug=1, the code prints a lot of data.  Make sure that you don\'92t have this option selected during production runs.  The main file that will be of interest to you is check.xyz.  This prints out an xyz coordinate file for the QM region of the simulation.  Also debug.log will print out a number of statements to confirm that what is being calculated and read in from the input. \
+}
