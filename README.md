@@ -12,9 +12,7 @@ To best understand contents in this folder, please read directories and files in
 2. Read directories / files with the smallest index first, then move on to larger indexes or directories / files that are not indexed. 
 --> For example, the first file you should be reading (after this README.txt) is 0-hardwares & softwares / 1-desktop / 0-software-for-desktop.docx
 
-There is another copy of this folder on https://github.com/RosalindXu/MD-SolEFP-methods
-If you have questions or get stuck, ask Casey. 
-Additionally, Casey has all my project files as well as electronic notes, which could be helpful
+Additionally, the CHL Lab at Haverford College has all my project files as well as electronic notes, which could be helpful. 
 
 
 Best Wishes,
