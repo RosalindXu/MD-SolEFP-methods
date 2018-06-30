@@ -1,0 +1,7 @@
+# SOLVATOCHROMIC SolEFP TOPOLOGY FILE FOR MeSCN IR PROBE
+# FORCE FIELD: Amber99sb implemented by gmx
+[ MSCN ]
+@mescn
+reorder       9 10  8  5  0  6  7
+supl          1  2  3  4
+#

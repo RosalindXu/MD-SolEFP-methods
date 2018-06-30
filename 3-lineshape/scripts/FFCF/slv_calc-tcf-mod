@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+"""
+ Compute time correlation functions from the SLV report.
+ Usage: [report] [maxdelayN] [norm]
+ 
+ Written by Bartek Blasiak
+ Modified by Rosalind J. Xu 01/18 
+ 1. Used correlation functions in correlation.py (which are the correct implementation
+ in the context of spectroscopic correlations).
+ 2. Added an option [maxdelayN] for specifying the maximum delay window for correlation
+ (calculate from C(0) to C(maxdelayN)
+ 
+"""
+print __doc__
+from sys import argv, exit
+if len(argv)==1: exit()
+from scitools import filetable
+from numpy import *
+from libbbg.utilities import ft_1d
+from correlation import * #mod
+import pylab
+
+#cd is modified
+def cf(y1, y2, N, norm=False):
+    """Correlation function between y1 and y2"""
+    if norm:
+    	return CorrNorm(y1, y2, N)
+    else:
+    	return CorrUnNorm(y1, y2, N)
+
+# to be evaluated
+autocorr_files = ['COU-COU', 'EXR-EXR', 'POL-POL', 'DIS-DIS', 'TOTENV-TOTENV']
+croscorr_files = ['COU-EXR', 'COU-POL', 'COU-DIS', 'EXR-POL', 'EXR-DIS', 'POL-DIS']
+corr_files     = autocorr_files + croscorr_files
+
+# - read inputs
+TRAJ =          argv[1]
+N    =      int(argv[2])
+NORM = bool(int(argv[3]))
+if NORM: snorm = 'norm'
+else:    snorm = 'unorm'
+
+# - read trajectory
+r = filetable.read(open(TRAJ))
+
+# - parse data
+#x     = r[:, 0]                                             ; npoints= len(x) #mod
+r_tot = r[:,13]                                          #  ; r_tot -= mean(r_tot)
+r_xr  = r[:, 8]                                          #  ; r_xr  -= mean(r_xr )
+r_cou = r[:, 1]+r[:, 4]+r[:, 5]                          #  ; r_cou -= mean(r_cou)
+r_pol = r[:, 6]                                          #  ; r_pol -= mean(r_pol)
+r_dis = r[:,10]                                          #  ; r_dis -= mean(r_dis)
+r_env = r[:,18]											
+r_totenv = r[:,19]
+r_ele = r_tot - r_xr
+r_ele2= r_ele - r_dis
+r_1st = r_cou + r_xr
+
+
+# - collect data
+data = {'TOT': r_tot, 'ELE': r_ele, 'COU': r_cou, 'EXR': r_xr, 'POL': r_pol, 'DIS': r_dis, 'EL2': r_ele2, '1ST': r_1st, 'ENV': r_env, 'TOTENV': r_totenv}
+
+# - compute correlation functions
+for data_1 in data.keys():
+    for data_2 in data.keys():
+        cf_type = "%s-%s" % (data_1, data_2)
+        if cf_type in corr_files:
+           print " - computing %s correlation..." % cf_type
+           out = open('tcf.%s.%s.dat' % (cf_type, snorm), 'w')
+           y   = cf(data[data_1], data[data_2], N, norm=NORM)
+           for i in xrange(N+1):
+               out.write('%6i %13.5E\n' % (y[i][0], y[i][1]))
+           out.close()
+

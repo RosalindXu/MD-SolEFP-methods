@@ -1,0 +1,8 @@
+# SOLVATOCHROMIC SolEFP TOPOLOGY FILE FOR MeSCN IR PROBE
+# FORCE FIELD: CHARMM36MSCN IMPLEMENTED BY GMX
+[ MSCN ]
+@mescn
+# this matches the name of a folder and also the files in that folder
+reorder       9 10  8  5  0  6  7
+supl          1  2  3  4
+#

@@ -1,0 +1,43 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+# User specific aliases and functions
+
+# For Gromacs5
+source /opt/gromacs5/bin/GMXRC
+export GMXLIB=$HOME/forcefields
+
+# For Open_MPI
+module load openmpi
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/openmpi/lib
+
+# Python build for solvshift
+export PATH=$HOME/programs/python2.7/bin:$PATH
+
+# For numpy finding some .so files
+export LD_LIBRARY_PATH=/opt/intel/lib/intel64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/intel/compilers_and_libraries_2016.3.210/linux/mkl/lib/intel64_lin/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/intel/compilers_and_libraries_2016.3.210/linux/mkl/lib/intel64_lin_mic/:$LD_LIBRARY_PATH
+
+# For solvshift
+export SLV_DATA=$HOME/programs/python2.7/lib/python2.7/site-packages/solvshift-dat
+export PATH=$PATH:$HOME/programs/slv_util
+
+# For intel
+source /opt/intel/bin/compilervars.sh intel64 
+
+# For zstd
+export PATH=$PATH:$HOME/programs/zstd/bin
+
+# For ORCA
+export ORCA=/opt/orca   
+
+# For GAMESS
+export PATH=$PATH:$HOME/programs/gamess
+
+# For OpenMPI
+export PATH=/opt/openmpi/bin:$PATH

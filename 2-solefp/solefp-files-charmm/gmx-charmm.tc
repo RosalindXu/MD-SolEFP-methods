@@ -1,0 +1,321 @@
+# -------------------------------------------------------------------
+# SOLVATOCHROMIC SolEFP TOPOLOGY FILE FOR AMINOACID SIDE-CHAINS
+# FORCE FIELD: CHARMM36MSCN IMPLEMENTED BY GMX
+# ROSALIND XU MARCH 2018 
+# -------------------------------------------------------------------
+#
+#
+# ---- AMINOACID RESIDUES ----
+#
+[ ASP ]
+@mecoo-
+reorder       5  6  8  7  0  9 10
+supl          3  6  7
+#
+[ ASN ]
+@chonh2
+reorder       8  9  0 10 12 11
+supl          1  2  4
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+#
+[ GLU ]
+@mecoo-
+reorder       8  9 11 10  0 12 13
+supl          3  6  7
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+#
+[ GLUP ]
+@mecooh
+reorder       8 11 12 13  6  7  0 14
+supl          2  3  4  8
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+#
+[ GLN ]
+@chonh2
+reorder      11 12  0 13 14 15
+supl          1  2  4
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+@methane
+reorder       8  9 10  0  0
+supl          1  2  3
+#
+[ SER ]
+@meoh
+reorder       5  8  6  7  0  9
+supl          1  2  6
+#
+[ THR ]
+@meoh
+reorder       5  7  0  0  6  8
+supl          1  2  6
+@methane
+reorder       9  10 11 12 0
+supl          1  2  3
+#
+[ TYR ]
+@phenol
+reorder       14 15 13 11 18 16 19 9 12 8 17 10 0 
+supl          1  3  6  8
+@methane      
+reorder       5  6  7  0  0 
+supl          1  2  3
+#
+[ PHE ]
+@benzene
+reorder       8  0  9 11 13 17 15 10 12 14 18 16
+supl          1  4  6
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+#
+[ LYS ]
+@menh3+
+reorder      14 15 17 16  0 18 19 20
+supl          1  3  6
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+@methane      
+reorder       8  9 10  0  0
+supl          1  2  3
+@methane     
+reorder      11 12 13  0  0
+supl          1  2  3
+#
+[ ARG ]
+@me-guanidinium+
+reorder      16 14 20 17 22 21 19 18 11 15 12 13  0
+supl          1  2  3  4
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+@methane
+reorder       8  9 10  0  0
+supl          1  2  3
+#
+[ GLY ]
+#
+[ HSD ]
+@imidazole
+reorder       10 14 13 11 8  9  0 15 12
+supl          1  2  3  4  5
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+#
+[ HSE ]
+#
+[ HSP ]
+#
+[ TRP ]
+@indole
+reorder      21  19  17  15  14  13  16  8  20  22  18  9  11  12  10  0
+supl          2   3   5   8  13
+@methane
+reorder       5   6   7   0   0
+supl          1   2   3
+#
+[ MET ]
+@dms
+reorder      12 11  8  0  9 10 13 14 15
+supl          1  2  3
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+#
+[ CYS ]
+#
+[ PRO ]
+# very big problem with double counting of CH4 and NMA from CONH if NMA is used. Currently the amide part of PRO is not accounted for. Only the three methanes. 
+@methane
+reorder       2  3  4  0  0
+supl          1  2  3
+@methane
+reorder       7  8  9  0  0
+supl          1  2  3
+@methane
+reorder       10 11 12  0  0
+supl          1  2  3
+#
+[ ALA ]
+@methane
+reorder       5  6  7  8  0
+supl          1  2  3
+#
+[ LEU ]                                                       
+@methane      
+reorder       5  6  7  0  0
+supl          1  2  3
+@methane      
+reorder      10 11 12 13  0
+supl          1  2  3
+@methane
+reorder      14 15 16 17  0
+supl          1  2  3
+#
+[ ILE ]
+@methane
+reorder       7  8  9 10  0
+supl          1  2  3
+@methane
+reorder      11 12 13  0  0
+supl          1  2  3
+@methane
+reorder      14 15 16 17  0
+supl          1  2  3
+#
+[ VAL ]
+@methane
+reorder       7  8  9 10  0
+supl          1  2  3
+@methane      
+reorder      11 12 13 14  0
+supl          1  2  3
+#
+[ XXX ]
+#
+# ---- N-TERMINI ----
+# Note that NMET, NALA, etc. are not CHARMM standard residue names.
+# To use, simply add N- to the residue name of the first residue in .gro file. 
+#
+[ NMET ]
+@menh3+
+reorder       5  6  1  0  0  2  3  4
+supl          1  3  6
+@dms
+reorder      14 13 10  0 11 12 15 16 17
+supl          1  2  3
+@methane
+reorder       7  8  9  0  0
+supl          1  2  3
+#
+[ NALA ]
+@menh3+
+reorder       5  6  1  0  0  2  3  4
+supl          1  3  6
+@methane
+reorder       7  8  9 10  0
+supl          1  2  3  
+#
+# ---- C-TERMINI ----
+# Note that CVAL, CLYS, etc. are not CHARMM standard residue names.
+# To use, simply add C- to the residue name of the last residue in .gro file.
+#
+[ CVAL ]
+@mecoo-
+reorder       3  4 15  0  0 16 17
+supl          3  6  7
+@methane
+reorder       7  8  9 10  0
+supl          1  2  3
+@methane      
+reorder      11 12 13 14  0
+supl          1  2  3
+#
+[ CLYS ]
+@mecoo-
+reorder       3  4 21  0  0 22 23
+supl          3  6  7
+@menh3+
+reorder      14 15 17 16  0 18 19 20
+supl          1  3  6
+@methane
+reorder       5  6  7  0  0
+supl          1  2  3
+@methane      
+reorder       8  9 10  0  0
+supl          1  2  3
+@methane     
+reorder      11 12 13  0  0
+supl          1  2  3
+#
+# ---- 	CAPS ----
+#
+[ ACE ] 
+# methane is NOT overlapping with chonhme
+@methane 
+reorder       1  2  3  4  0
+supl          1  2  3  
+#
+[ NME ]
+# methane IS overlapping with chonhme; still included because the program requires the prescence of a reorder list.
+@methane 
+reorder       3  4  5  6  0
+supl          1  2  3 
+#
+# ---- NON-AMINOACID RESIDUES ----
+#
+# ---- WATER ----
+#
+[ SOL ]
+@water
+reorder       1  2  3
+supl          1  2  3
+#
+[ HOH ]
+@water
+reorder       1  2  3
+supl          1  2  3
+#
+# ---- IONS ----
+#
+[ NA+ ]
+@na+
+reorder       1
+supl          1
+[ Na+ ]
+@na+
+reorder       1
+supl          1
+[ NA ]
+@na+
+reorder       1
+supl          1
+[ Na ]
+@na+
+reorder       1
+supl          1
+[ SOD ]
+@na+
+reorder       1
+supl          1
+#
+[ CL- ]
+@cl-
+reorder       1
+supl          1
+[ Cl- ]
+@cl-
+reorder       1
+supl          1
+[ CL ]
+@cl-
+reorder       1
+supl          1
+[ Cl ]
+@cl-
+reorder       1
+supl          1
+[ CLA ]
+@cl-
+reorder       1
+supl          1
+#
+[ CAL ]
+@ca++
+reorder       1
+supl          1
+[ Cal ]
+@ca++
+reorder       1
+supl          1
+#
+
