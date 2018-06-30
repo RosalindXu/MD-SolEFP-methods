@@ -1,0 +1,13 @@
+1   ! nprotein  a flag to indicate this is a protein system
+5   ! nqm       the number of amino acid residues to be included in the QM region
+72 161 162 165 169 ! jqm     a list of the numbers of the residues to include in the QM region (smallest to largest)
+0 0 ! lqm nnqm
+0   ! ncap      
+0   ! iMonitor  Keep at 0. 
+4   ! nwaters   The number of waters to be included in the QM region [this will be the (nwaters) closest waters picked dynamically throughout the trajectory]
+3   ! mwaters   The number of sites in the water molecule [some water molecules have 4 or 5 sites]
+0   ! icenter   A flag to determine how the bond is stretched. Leave at 0.
+0   ! iDFT      A flag to determine the QM method [0 = oPM3, 1 = B3LYP/6-311++G(d,p), 2 = MP2/aug-cc-pVDZ, and 3 = (define your own method) ]
+1   ! iDVR      A flag to determine how the potential energy is calcualted (this should be left at 1 for the set of parameters found in pm3.prm
+0   ! idebug    If this is set to 1, the program will print a lot more information.  This is helpful for setting up new simulations but is not suitable for production runs 
+1   ! iorder    If the .gro and .xtc files are ordered as protein-water-counter ions, enter 0; if the ordering is instead protein-counter ions-water, enter 1
