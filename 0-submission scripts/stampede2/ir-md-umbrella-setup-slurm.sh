@@ -32,7 +32,7 @@ for spoint in n.1 n.2 n.3 n.4 n.5 n.6 ; do
     cp $protein-$site-$spoint-$lengthold/* $protein-$site-$spoint-$length
     cp $HOME/gmx/mdpfiles/umbrella-md.mdp $protein-$site-$spoint-$length
     cd $protein-$site-$spoint-$length
-    awk '/$protein-$site_Ion_chain_A2.itp/{print "#include \"dihrestraint.itp\""}1' $protein-$site.top > $protein-$site-umbrella.top
+    awk '/Ion_chain_A2.itp/{print "#include \"dihrestraint.itp\""}1' $protein-$site.top > $protein-$site-umbrella.top
     (echo a CA CB SD CE \& r MSCN; echo q;) | gmx make_ndx -f $protein-$site-$spoint-$lengthold-initial.gro -o $protein-$site-dihedral1.ndx
     (echo a N CA CB SD \& r MSCN; echo q;) | gmx make_ndx -f $protein-$site-$spoint-$lengthold-initial.gro -o $protein-$site-dihedral2.ndx
     dihndx1=$(tail -n 1 $protein-$site-dihedral1.ndx)
